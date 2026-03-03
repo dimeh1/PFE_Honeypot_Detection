@@ -72,36 +72,58 @@ def get_temporal_features(target_ip, target_port=80, count=5):
 
     # ----- Kernel Latency et Jitter -----
     rtts = []
-    for _ in range(count):
-        t1 = time.perf_counter()
-        # On mesure la réponse pure de la pile TCP
-        res = sr1(IP(dst=target_ip)/TCP(dport=target_port, flags="S"), timeout = 2, verbose = False)
-        t2 = time.perf_counter()
+    print(f"[*] Mesure de la latence noyau sur {target_ip}...")
 
-        if res:
-            rtts.append(t2 -t1)
-    
-    if not rtts:
-        return None
+    for _ in range(count):
+        try:
+            t1 = time.perf_counter()
+            # On mesure la réponse pure de la pile TCP
+            res = sr1(IP(dst=target_ip)/TCP(dport=target_port, flags="S"), timeout = 2, verbose = False)
+            t2 = time.perf_counter()
+
+            if res:
+                rtts.append(t2 -t1)
+            else:
+                print(f"  [!] Paquet {i+1}/5 : Pas de réponse (Timeout réseau)")
+        except Exception as e:
+            print(f"  [!] Erreur Scapy au paquet {i+1}: {e}")
 
     if len(rtts) >= 2:
         features_B["jitter"] = float(np.std(rtts))
         features_B["kernel_lantency"] = sum(rtts) / len(rtts)
+    else:
+        print(f"[-] Impossible de calculer la latence noyau pour {target_ip} (Cible injoignable)")
 
     # ----- Handshake Delay -----
+    print(f"[*] Mesure du Handshake SSH sur {target_ip}...")
     try:
         s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         s.settimout(3)
 
         t_start = time.perf_counter()
         s.connect((target_ip, target_port))
+
         banner = s.recv(1024)
         t_end = time.perf_counter()
         s.close()
 
         if banner:
             features_B["handshake_delay"] = t_end - t_start
-    except:
-        features_B["handshake_delay"] = 0
+            print(f"  [+] Bannière reçue : {banner.decode().strip()[:30]}...")
+        else:
+            print("  [!] Connexion établie mais aucune bannière reçue (Honeypot probable ?)")
+
+    except socket.timeout:
+        print(f"  [!] Timeout : Le service sur {target_ip}:{target_port} n'a pas répondu à temps.")
+    except ConnectionRefusedError:
+        print(f"  [!] Erreur : La cible {target_ip} a refusé la connexion sur le port {target_port}.")
+    except Exception as e:
+        print(f"  [!] Erreur inattendue lors du handshake : {e}")
+
+    if features_B["kernel_latency"] > 0 and features_B["handshake_delay"] > 0:
+        features_B["latency_ratio"] = features_B["handshake_delay"] / features_B["kernel_latency"]
+        print(f"[+] Phase B terminée. Ratio calculé : {features_B['latency_ratio']:.2f}")
+    else:
+        print("[-] Calcul du ratio impossible : données manquantes.")
 
     return features_B
