@@ -65,7 +65,7 @@ def get_temporal_features(target_ip, target_port=80, count=5):
 
     features_B = {
         "jitter" : 0.0,
-        "kernel_lantency" : 0.0,
+        "kernel_latency" : 0.0,
         "handshake_delay" : 0.0,
         "latency-ratio" : 0.0
     }
