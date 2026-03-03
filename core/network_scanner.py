@@ -98,7 +98,7 @@ def get_temporal_features(target_ip, target_port=80, count=5):
     print(f"[*] Mesure du Handshake SSH sur {target_ip}...")
     try:
         s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        s.settimout(3)
+        s.settimeout(3)
 
         t_start = time.perf_counter()
         s.connect((target_ip, target_port))
