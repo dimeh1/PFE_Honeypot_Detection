@@ -90,7 +90,7 @@ def get_temporal_features(target_ip, target_port=80, count=5):
 
     if len(rtts) >= 2:
         features_B["jitter"] = float(np.std(rtts))
-        features_B["kernel_lantency"] = sum(rtts) / len(rtts)
+        features_B["kernel_latency"] = sum(rtts) / len(rtts)
     else:
         print(f"[-] Impossible de calculer la latence noyau pour {target_ip} (Cible injoignable)")
 
