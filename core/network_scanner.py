@@ -14,7 +14,7 @@ def get_network_fingerprint(target_ip, target_port=80):
     Retourn un dictionnaire des caractéristiques extraites.
     """
     
-    features = {
+    features_A = {
         "tcp_options_order" : "Unknown",
         "ip_id_behavior" : "Unknown",
         "window_size" : 0,
@@ -35,27 +35,27 @@ def get_network_fingerprint(target_ip, target_port=80):
     
     # ----- Analyse du premier paquet reçu (TTL, Window Size) -----
     ttls = [pkt.ttl for pkt in packets]
-    features["ttl"] = min(ttls)
+    features_A["ttl"] = min(ttls)
     res = packets[0]
-    features["window_size"] = res.getlayer(TCP).window
+    features_A["window_size"] = res.getlayer(TCP).window
 
     # ----- Ordre des otpions TCP -----
     raw_options = res.getlayer(TCP).options
     option_names = [opt[0] for opt in raw_options]
-    features["tcp_options_order"] = "-".join(option_names)
+    features_A["tcp_options_order"] = "-".join(option_names)
 
     # ----- Génération de l'IP ID -----
     if len(packets) >= 2:
         id1 = packets[0].id
         id2 = packets[1].id
         if id2 == id1 + 1 or id2 == id1 + 2:
-            features["ip_id_behavior"] = "Incremental"
+            features_A["ip_id_behavior"] = "Incremental"
         elif id1 == id2 == 0:
-            features["ip_id_behavior"] = "Null"
+            features_A["ip_id_behavior"] = "Null"
         else:
-            features["ip_id_behavior"] = "Random"
+            features_A["ip_id_behavior"] = "Random"
 
-    return features
+    return features_A
 
 
 def get_temporal_features(target_ip, target_port=80, count=5):
