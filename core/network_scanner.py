@@ -55,7 +55,6 @@ def get_network_fingerprint(target_ip, target_port=80):
         else:
             features_A["ip_id_behavior"] = "Random"
 
-<<<<<<< HEAD
     return features_A
 
 
@@ -128,6 +127,3 @@ def get_temporal_features(target_ip, target_port=80, count=5):
         print("[-] Calcul du ratio impossible : données manquantes.")
 
     return features_B
-=======
-    return features_A
->>>>>>> b30039d0c1de4834e2359ca209a7bfae1330a68d
