@@ -1,6 +1,10 @@
 from scapy.all import IP, TCP, sr1
 import logging
 
+import time
+import numpy as np
+import socket
+
 # Désactivation des logs inutiles de Scapy
 logging.getLogger("scapy.runtime").setLevel(logging.ERROR)
 
@@ -52,3 +56,52 @@ def get_network_fingerprint(target_ip, target_port=80):
             features["ip_id_behavior"] = "Random"
 
     return features
+
+
+def get_temporal_features(target_ip, target_port=80, count=5):
+    """
+    Analyse Temporelle et Statistique.
+    """
+
+    features_B = {
+        "jitter" : 0.0,
+        "kernel_lantency" : 0.0,
+        "handshake_delay" : 0.0,
+        "latency-ratio" : 0.0
+    }
+
+    # ----- Kernel Latency et Jitter -----
+    rtts = []
+    for _ in range(count):
+        t1 = time.perf_counter()
+        # On mesure la réponse pure de la pile TCP
+        res = sr1(IP(dst=target_ip)/TCP(dport=target_port, flags="S"), timeout = 2, verbose = False)
+        t2 = time.perf_counter()
+
+        if res:
+            rtts.append(t2 -t1)
+    
+    if not rtts:
+        return None
+
+    if len(rtts) >= 2:
+        features_B["jitter"] = float(np.std(rtts))
+        features_B["kernel_lantency"] = sum(rtts) / len(rtts)
+
+    # ----- Handshake Delay -----
+    try:
+        s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        s.settimout(3)
+
+        t_start = time.perf_counter()
+        s.connect((target_ip, target_port))
+        banner = s.recv(1024)
+        t_end = time.perf_counter()
+        s.close()
+
+        if banner:
+            features_B["handshake_delay"] = t_end - t_start
+    except:
+        features_B["handshake_delay"] = 0
+
+    return features_B
