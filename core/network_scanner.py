@@ -1,6 +1,10 @@
 from scapy.all import IP, TCP, sr1
 import logging
 
+import time
+import numpy as np
+import socket
+
 # Désactivation des logs inutiles de Scapy
 logging.getLogger("scapy.runtime").setLevel(logging.ERROR)
 
