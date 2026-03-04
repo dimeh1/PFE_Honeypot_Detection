@@ -58,7 +58,7 @@ def get_network_fingerprint(target_ip, target_port=80):
     return features_A
 
 
-def get_temporal_features(target_ip, target_port=22, count=5):
+def get_temporal_features(target_ip, target_port=80, count=5):
     """
     Analyse Temporelle et Statistique.
     """
