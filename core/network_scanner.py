@@ -171,7 +171,7 @@ def get_enrichment_behavioral(target_ip, banner_raw, target_port=22):
         print("  [!] ALERTE : Mot-clé suspect trouvé dans la bannière !")
 
     # Extraction de la version OpenSSH
-    version_match = re.search(r"OpenSSH_([0-9.]+)", banner_text)
+    version_match = re.search(r"OpenSSH_([0-9.]+)", banner_text, re.IGNORECASE)
     if version_match:
         v_str = version_match.group(1)
         try:
