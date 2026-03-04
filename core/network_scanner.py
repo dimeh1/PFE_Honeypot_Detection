@@ -149,7 +149,9 @@ def get_enrichment_behavioral(target_ip, banner_raw, target_port=22):
         "banner_length" : 0,
         "has_keyword" : 0,
         "ssh_version_major" : 0.0,
-        "has_os_tag": 0,
+        "os_family_linux": 0,
+        "os_family_bsd": 0,
+        "os_family_windows": 0,
         "deviation_flag" : 0
     }
 
@@ -169,15 +171,23 @@ def get_enrichment_behavioral(target_ip, banner_raw, target_port=22):
         print("  [!] ALERTE : Mot-clé suspect trouvé dans la bannière !")
 
     # Extraction de la version OpenSSH
-    version_match = re.search(r"OpenSSH_([0-9]+\.[0-9]+)", banner_text)
+    version_match = re.search(r"OpenSSH_([0-9.]+)", banner_text)
     if version_match:
-        features["ssh_version_major"] = float(version_match.group(1))
-        print(f"  [+] Version SSH extraite : {features['ssh_version_major']}")
+        try:
+            # On prend les deux premiers chiffres (ex: 10.2)
+            v_parts = version_match.group(1).split('.')
+            features["ssh_version_major"] = float(version_match.group(1))
+            print(f"  [+] Version SSH extraite : {features['ssh_version_major']}")
+        except:
+            features["ssh_version_major"] = 0.0
 
     #Présence de tags OS (Indice de réalisme)
-    os_tags = ["ubuntu", "debian", "centos", "redhat", "freebsd"]
-    if any(tag in banner_text.lower() for tag in os_tags):
-        features["has_os_tag"] = 1
+    if any(os in banner_text for os in ["ubuntu", "debian", "centos", "redhat", "linux"]):
+        features["os_family_linux"] = 1
+    if any(os in banner_text for os in ["openbsd", "freebsd", "netbsd"]):
+        features["os_family_bsd"] = 1
+    if "windows" in banner_text:
+        features["os_family_windows"] = 1
 
     print(f"[*] Test de déviation du protocole...")
     try:
@@ -195,13 +205,13 @@ def get_enrichment_behavioral(target_ip, banner_raw, target_port=22):
             valid_errors = [b"protocol mismatch", b"bad packet", b"invalid format"]
             
             if resp and not any(err in resp for err in valid_errors):
-                features["feat_deviation_flag"] = 1
+                features["deviation_flag"] = 1
                 print(f"  [!] Déviation : La cible a répondu de manière non-standard.")
             elif not resp:
                 print("  [+] Comportement normal : La cible a fermé la connexion proprement.")
         except socket.timeout:
             # Un honeypot qui freeze est une déviation
-            features["feat_deviation_flag"] = 1
+            features["deviation_flag"] = 1
             print("  [!] Déviation : La cible n'a pas répondu à l'erreur (Timeout).")
         
         s.close()
