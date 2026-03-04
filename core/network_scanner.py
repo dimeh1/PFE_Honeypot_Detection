@@ -202,19 +202,28 @@ def get_enrichment_behavioral(target_ip, banner_raw, target_port=22):
         
         try:
             resp = s.recv(1024).lower()
-            # Un vrai serveur répond par une erreur standard
-            valid_errors = [b"protocol mismatch", b"bad packet", b"invalid format"]
             
-            if resp and not any(err in resp for err in valid_errors):
-                features["deviation_flag"] = 1
-                print(f"  [!] Déviation : La cible a répondu de manière non-standard.")
-            elif not resp:
-                print("  [+] Comportement normal : La cible a fermé la connexion proprement.")
+            if resp:
+                print(f"  [i] Réponse reçue : {resp.decode(errors='ignore').strip()}")
+                valid_errors = [b"protocol mismatch", b"bad packet", b"invalid format", b"identification"]
+                
+                # Si la réponse contient une erreur standard SSH, c'est OK (0)
+                if any(err in resp for err in valid_errors):
+                    features["deviation_flag"] = 0
+                    print("  [+] Réponse standard détectée (Serveur réel probable).")
+                else:
+                    # Si la réponse est bizarre (ex: du HTML, du JSON ou rien de cohérent)
+                    features["deviation_flag"] = 1
+                    print(f"  [!] Déviation : Réponse non-standard.")
+            else:
+                # Si resp est vide, c'est que le serveur a coupé (comportement standard)
+                features["deviation_flag"] = 0
+                print("  [+] Le serveur a coupé la connexion (Comportement standard).")
+                
         except socket.timeout:
-            # Un honeypot qui freeze est une déviation
             features["deviation_flag"] = 1
-            print("  [!] Déviation : La cible n'a pas répondu à l'erreur (Timeout).")
-        
+            print("  [!] Déviation : La cible a 'gelé' (Timeout). Typique d'un honeypot scripté.")
+
         s.close()
     except Exception as e:
         print(f"  [-] Info : Connexion rejetée lors du test de déviation ({e}).")
