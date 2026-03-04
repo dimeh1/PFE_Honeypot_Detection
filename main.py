@@ -1,7 +1,7 @@
 import argparse
 import sys
 import os
-from core.network_scanner import get_network_fingerprint, get_temporal_features
+from core.network_scanner import get_network_fingerprint, get_temporal_features, get_enrichment_behavioral
 
 
 # On définit le logo dans une constante
@@ -42,9 +42,13 @@ def run_honeypops(target_ip):
     print("[+] Lancement de la Phase B (Temporelle)...")
     results_b = get_temporal_features(target_ip)
 
+    # ----- PHASE SÉMANTIQUE + DÉVIATION -----
+    print("[+] Lancement de la Phase B (Temporelle)...")
+    results_banner = get_enrichment_behavioral(target_ip, results_b["banner_raw"])
+
     # ----- SYNTHÈSE DES RÉSULTATS -----
     print("\n[RÉSULTATS FINAUX]")
-    final_data = {**results_a, **results_b}
+    final_data = {**results_a, **results_b, **results_banner}
     for key, value in final_data.items():
         print(f"  - {key}: {value}")
     

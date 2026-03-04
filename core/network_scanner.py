@@ -58,7 +58,7 @@ def get_network_fingerprint(target_ip, target_port=80):
     return features_A
 
 
-def get_temporal_features(target_ip, target_port=22, count=10):
+def get_temporal_features(target_ip, target_port=22, count=5):
     """
     Analyse Temporelle et Statistique.
     """
@@ -68,7 +68,7 @@ def get_temporal_features(target_ip, target_port=22, count=10):
         "kernel_latency" : 0.0,
         "handshake_delay" : 0.0,
         "latency_ratio" : 0.0,
-        "has_banner" : 0
+        "banner_raw" : None
     }
 
     # ----- Kernel Latency et Jitter -----
@@ -112,10 +112,8 @@ def get_temporal_features(target_ip, target_port=22, count=10):
             s.close()
 
             if banner:
-                features_B["has_banner"] = 1
+                features_B["banner_raw"] = banner # On garde la bannière brute
                 handshake_samples.append(t_end - t_start)
-            else:
-                print(f"  [!] Connexion établie mais aucune bannière reçue (Honeypot probable ?)")
 
         except socket.timeout:
             print(f"  [!] Timeout : Le service sur {target_ip}:{target_port} n'a pas répondu à temps.")
@@ -139,3 +137,66 @@ def get_temporal_features(target_ip, target_port=22, count=10):
         print(f"  [!] Aucun handshake n'a pu être complété.")
 
     return features_B
+
+# Analyse sémantique & Déviation
+def get_enrichment_behavioral(target_ip, banner_raw, target_port=22):
+    """
+    Analyse du contenu de la bannière et teste la réation du protocole.
+    """
+
+    features = {
+        "banner_length" : 0,
+        "has_keyword" : 0,
+        "is_impossible_version" : 0,
+        "deviation_flag" : 0
+    }
+
+    if not banner_raw:
+        print("[-] Phase Enrichissement : Aucune bannière à analyser.")
+        return features
+    
+    print(f"[*] Lancement de l'enrichissement sémantique sur {target_ip}...")
+
+    banner_text = banner_raw.decode(errors='ignore').strip().lower()
+    features["banner_length"] = len(banner_text)
+
+    keywords = ["honeypot", "honey", "kippo", "cowrie", "dionaea"]
+    if any(key in banner_text for key in keywords):
+        features["has_keyword"] = 1
+        print("  [!] ALERTE : Mot-clé suspect trouvé dans la bannière !")
+
+    fake_version = ["openssh_6.0p1", "openssh_5.3", "openssh_10.2", "openssh_11"]
+    if any(ver in banner_text for ver in fake_version):
+        features["is_impossible_version"] = 1
+        print("  [!] ALERTE : Numéro de version OpenSSH impossible détecté !")
+
+    print(f"[*] Test de déviation du protocole...")
+    try:
+        s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        s.settimeout(3)
+        s.connect((target_ip, target_port))
+        _ = s.recv(1024) # Skip la bannière de bienvenue
+        
+        # Envoi d'une requête invalide (Page 13 de l'article)
+        s.send(b"SSH-2.0-InvalidProtocol\n\n\n\n\n")
+        
+        try:
+            resp = s.recv(1024).lower()
+            # Un vrai serveur répond par une erreur standard
+            valid_errors = [b"protocol mismatch", b"bad packet", b"invalid format"]
+            
+            if resp and not any(err in resp for err in valid_errors):
+                features["feat_deviation_flag"] = 1
+                print(f"  [!] Déviation : La cible a répondu de manière non-standard.")
+            elif not resp:
+                print("  [+] Comportement normal : La cible a fermé la connexion proprement.")
+        except socket.timeout:
+            # Un honeypot qui freeze est une déviation
+            features["feat_deviation_flag"] = 1
+            print("  [!] Déviation : La cible n'a pas répondu à l'erreur (Freeze).")
+        
+        s.close()
+    except Exception as e:
+        print(f"  [-] Info : Connexion rejetée lors du test de déviation ({e}).")
+    
+    return features
