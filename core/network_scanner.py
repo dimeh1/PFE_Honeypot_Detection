@@ -67,21 +67,22 @@ def get_temporal_features(target_ip, target_port=22, count=5):
         "jitter" : 0.0,
         "kernel_latency" : 0.0,
         "handshake_delay" : 0.0,
-        "latency_ratio" : 0.0
+        "latency_ratio" : 0.0,
+        "has_banner" : 0
     }
 
     # ----- Kernel Latency et Jitter -----
     rtts = []
     print(f"[*] Mesure de la latence noyau sur {target_ip}...")
 
-    for i in range(count):
+    for i in range(count + 1):
         try:
             t1 = time.perf_counter()
             # On mesure la réponse pure de la pile TCP
             res = sr1(IP(dst=target_ip)/TCP(dport=target_port, flags="S"), timeout = 2, verbose = False)
             t2 = time.perf_counter()
 
-            if res:
+            if res and i > 0:
                 rtts.append(t2 -t1)
             else:
                 print(f"  [!] Paquet {i+1}/5 : Pas de réponse (Timeout réseau)")
@@ -90,40 +91,51 @@ def get_temporal_features(target_ip, target_port=22, count=5):
 
     if len(rtts) >= 2:
         features_B["jitter"] = float(np.std(rtts))
-        features_B["kernel_latency"] = sum(rtts) / len(rtts)
+        features_B["kernel_latency"] = float(np.median(rtts))
     else:
         print(f"[-] Impossible de calculer la latence noyau pour {target_ip} (Cible injoignable)")
 
     # ----- Handshake Delay -----
     print(f"[*] Mesure du Handshake SSH sur {target_ip}...")
-    try:
-        s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        s.settimeout(3)
+    handshake_samples = []
+    
+    for _ in range(3):
+        try:
+            s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+            s.settimeout(3)
 
-        t_start = time.perf_counter()
-        s.connect((target_ip, target_port))
+            t_start = time.perf_counter()
+            s.connect((target_ip, target_port))
 
-        banner = s.recv(1024)
-        t_end = time.perf_counter()
-        s.close()
+            banner = s.recv(1024)
+            t_end = time.perf_counter()
+            s.close()
 
-        if banner:
-            features_B["handshake_delay"] = t_end - t_start
-            print(f"  [+] Bannière reçue : {banner.decode().strip()[:30]}...")
+            if banner:
+                features_B["has_banner"] = 1
+                handshake_samples.append(t_end - t_start)
+            else:
+                print(f"  [!] Connexion établie mais aucune bannière reçue (Honeypot probable ?)")
+
+        except socket.timeout:
+            print(f"  [!] Timeout : Le service sur {target_ip}:{target_port} n'a pas répondu à temps.")
+        except ConnectionRefusedError:
+            print(f"  [!] Erreur : La cible {target_ip} a refusé la connexion sur le port {target_port}.")
+        except Exception as e:
+            print(f"  [!] Erreur inattendue lors du handshake : {e}")
+
+    if handshake_samples:
+        best_handshake = min(handshake_samples)
+        features_B["handshake_delay"] = best_handshake
+
+        app_processing_time = max(0,best_handshake - features_B["kernel_latency"])
+
+        if features_B["kernel_latency"] > 0:
+            features_B["latency_ratio"] = app_processing_time / features_B["kernel_latency"]
+            print(f"[+] Phase B terminée. Ratio calculé : {features_B['latency_ratio']:.2f}")
         else:
-            print("  [!] Connexion établie mais aucune bannière reçue (Honeypot probable ?)")
-
-    except socket.timeout:
-        print(f"  [!] Timeout : Le service sur {target_ip}:{target_port} n'a pas répondu à temps.")
-    except ConnectionRefusedError:
-        print(f"  [!] Erreur : La cible {target_ip} a refusé la connexion sur le port {target_port}.")
-    except Exception as e:
-        print(f"  [!] Erreur inattendue lors du handshake : {e}")
-
-    if features_B["kernel_latency"] > 0 and features_B["handshake_delay"] > 0:
-        features_B["latency_ratio"] = features_B["handshake_delay"] / features_B["kernel_latency"]
-        print(f"[+] Phase B terminée. Ratio calculé : {features_B['latency_ratio']:.2f}")
+            print(f"  [-] Calcul du ratio impossible : données manquantes.")
     else:
-        print("[-] Calcul du ratio impossible : données manquantes.")
+        print(f"  [!] Aucun handshake n'a pu être complété.")
 
     return features_B
