@@ -54,7 +54,7 @@ def main():
 
     # On affiche le logo dès le début
     print(BANNER)
-    print("      --- Outil de Détection de Honeypots v1.0 ---\n")
+    print("                --- Outil de Détection de Honeypots v1.0 ---\n")
 
     # Configuration du parseur d'arguments
     parser = argparse.ArgumentParser(description="Honeypops : Outil de détection de Honeypots")
