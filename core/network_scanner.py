@@ -176,7 +176,7 @@ def get_enrichment_behavioral(target_ip, banner_raw, target_port=22):
         try:
             # On prend les deux premiers chiffres (ex: 10.2)
             v_parts = version_match.group(1).split('.')
-            features["ssh_version_major"] = float(version_match.group(1))
+            features["ssh_version_major"] = float(f"{v_parts[0]}.{v_parts[1]}")
             print(f"  [+] Version SSH extraite : {features['ssh_version_major']}")
         except:
             features["ssh_version_major"] = 0.0
