@@ -75,14 +75,14 @@ def get_temporal_features(target_ip, target_port=22, count=5):
     rtts = []
     print(f"[*] Mesure de la latence noyau sur {target_ip}...")
 
-    for i in range(count + 1):
+    for i in range(count):
         try:
             t1 = time.perf_counter()
             # On mesure la réponse pure de la pile TCP
             res = sr1(IP(dst=target_ip)/TCP(dport=target_port, flags="S"), timeout = 2, verbose = False)
             t2 = time.perf_counter()
 
-            if res and i > 0:
+            if res:
                 rtts.append(t2 -t1)
             else:
                 print(f"  [!] Paquet {i+1}/5 : Pas de réponse (Timeout réseau)")
