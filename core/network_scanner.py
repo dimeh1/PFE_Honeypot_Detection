@@ -4,6 +4,7 @@ import logging
 import time
 import numpy as np
 import socket
+import re
 
 # Désactivation des logs inutiles de Scapy
 logging.getLogger("scapy.runtime").setLevel(logging.ERROR)
@@ -147,7 +148,8 @@ def get_enrichment_behavioral(target_ip, banner_raw, target_port=22):
     features = {
         "banner_length" : 0,
         "has_keyword" : 0,
-        "is_impossible_version" : 0,
+        "ssh_version_major" : 0.0,
+        "has_os_tag": 0,
         "deviation_flag" : 0
     }
 
@@ -160,15 +162,22 @@ def get_enrichment_behavioral(target_ip, banner_raw, target_port=22):
     banner_text = banner_raw.decode(errors='ignore').strip().lower()
     features["banner_length"] = len(banner_text)
 
+    #  Recherche de mots-clés
     keywords = ["honeypot", "honey", "kippo", "cowrie", "dionaea"]
     if any(key in banner_text for key in keywords):
         features["has_keyword"] = 1
         print("  [!] ALERTE : Mot-clé suspect trouvé dans la bannière !")
 
-    fake_version = ["openssh_6.0p1", "openssh_5.3", "openssh_10.2", "openssh_11"]
-    if any(ver in banner_text for ver in fake_version):
-        features["is_impossible_version"] = 1
-        print("  [!] ALERTE : Numéro de version OpenSSH impossible détecté !")
+    # Extraction de la version OpenSSH
+    version_match = re.search(r"OpenSSH_([0-9]+\.[0-9]+)", banner_text)
+    if version_match:
+        features["ssh_version_major"] = float(version_match.group(1))
+        print(f"  [+] Version SSH extraite : {features['ssh_version_major']}")
+
+    #Présence de tags OS (Indice de réalisme)
+    os_tags = ["ubuntu", "debian", "centos", "redhat", "freebsd"]
+    if any(tag in banner_text.lower() for tag in os_tags):
+        features["has_os_tag"] = 1
 
     print(f"[*] Test de déviation du protocole...")
     try:
@@ -193,7 +202,7 @@ def get_enrichment_behavioral(target_ip, banner_raw, target_port=22):
         except socket.timeout:
             # Un honeypot qui freeze est une déviation
             features["feat_deviation_flag"] = 1
-            print("  [!] Déviation : La cible n'a pas répondu à l'erreur (Freeze).")
+            print("  [!] Déviation : La cible n'a pas répondu à l'erreur (Timeout).")
         
         s.close()
     except Exception as e:
