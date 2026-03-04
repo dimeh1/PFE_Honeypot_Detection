@@ -1,7 +1,9 @@
 import argparse
 import sys
 import os
+import time
 from core.network_scanner import get_network_fingerprint, get_temporal_features, get_enrichment_behavioral
+from core.data_saver import save_to_dataset
 
 
 # On définit le logo dans une constante
@@ -28,7 +30,7 @@ def load_ips_from_file(filepath):
         # On nettoie les espaces et on ignore les lignes vides
         return [line.strip() for line in f if line.strip()]
     
-def run_honeypops(target_ip):
+def run_honeypops(target_ip, label_value):
     """Lance l'analyse complète sur une IP."""
     print(f"\n" + "="*50)
     print(f"[*] ANALYSE DE LA CIBLE : {target_ip}")
@@ -49,9 +51,12 @@ def run_honeypops(target_ip):
     # ----- SYNTHÈSE DES RÉSULTATS -----
     print("\n[RÉSULTATS FINAUX]")
     final_data = {**results_a, **results_b, **results_banner}
+    
     for key, value in final_data.items():
         print(f"  - {key}: {value}")
     
+    save_to_dataset(final_data, target_ip, label=label_value)
+
     return final_data
 
 def main():
@@ -68,6 +73,9 @@ def main():
     group.add_argument("-t", "--target", help="IP de la cible unique")
     group.add_argument("-f", "--file", help="Fichier .txt contenant une liste d'IPs")
 
+    parser.add_argument("-l", "--label", type = int, choices = [0,1], required = True,
+                        help = "Label pour l'IA : 1 pour Honeypot, 0 pour Serveur Réel")
+
     args = parser.parse_args()
 
     targets = []
@@ -80,9 +88,19 @@ def main():
         print("[!] Aucune cible valide trouvée.")
         sys.exit(1)
 
+    print(f"[*] Mode : {'HONEYPOT (1)' if args.label == 1 else 'RÉEL (0)'}")
+    print(f"[*] Nombre de cibles : {len(targets)}")
+
     # Lancement du scan
     for ip in targets:
-        run_honeypops(ip)
+        try:
+            run_honeypops(ip, args.label)
+            # Petite pause pour laisser le réseau respirer
+            time.sleep(0.5)
+        except Exception as e:
+            print(f"[!] Erreur lors du traitement de {ip} : {e}")
+    
+    print(f"\n[+] Scan terminé. Les données sont dans data/honeypot_dataset.csv")
 
 if __name__ == "__main__":
     main()
