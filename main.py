@@ -2,11 +2,11 @@ import argparse
 import sys
 import os
 import time
+import joblib
 from core.network_scanner import get_network_fingerprint, get_temporal_features, get_enrichment_behavioral
 from core.data_saver import save_to_dataset
 
 
-# On définit le logo dans une constante
 BANNER = r"""
  /$$   /$$                                               /$$$$$$$                              
 | $$  | $$                                              | $$__  $$                             
@@ -30,6 +30,33 @@ def load_ips_from_file(filepath):
         # On nettoie les espaces et on ignore les lignes vides
         return [line.strip() for line in f if line.strip()]
     
+def predict_honeypot(features, model_path="train/honeypot_model.pkl"):
+    """Charge le modèle et prédit la nature de l'IP."""
+    if not os.path.exists(model_path):
+        return None, "Modèle introuvable. Entraînez l'IA d'abord."
+
+    try:
+        model = joblib.load(model_path)
+        
+        # Liste des features EXACTEMENT dans le même ordre que le CSV d'entraînement
+        feature_columns = [
+            "ttl", "window_size", "ip_id_behavior", "jitter", 
+            "kernel_latency", "handshake_delay", "latency_ratio",
+            "banner_length", "has_keyword", "ssh_version_major",
+            "os_family_linux", "os_family_bsd", "os_family_windows",
+            "deviation_flag"
+        ]
+        
+        # Préparation des données pour scikit-learn sans les valeurs de l'IP
+        data_vector = [[features.get(col, 0) for col in feature_columns]]
+        
+        prediction = model.predict(data_vector)[0]
+        probability = model.predict_proba(data_vector)[0]
+        
+        return prediction, probability
+    except Exception as e:
+        return None, str(e)
+    
 def run_honeypops(target_ip, label_value):
     """Lance l'analyse complète sur une IP."""
     print(f"\n" + "="*50)
@@ -45,7 +72,7 @@ def run_honeypops(target_ip, label_value):
     results_b = get_temporal_features(target_ip)
 
     # ----- PHASE SÉMANTIQUE + DÉVIATION -----
-    print("[+] Lancement de la Phase B (Temporelle)...")
+    print("[+] Lancement de la Phase Sémantique et déviation...")
     results_banner = get_enrichment_behavioral(target_ip, results_b["banner_raw"])
 
     # ----- SYNTHÈSE DES RÉSULTATS -----
@@ -55,15 +82,32 @@ def run_honeypops(target_ip, label_value):
     for key, value in final_data.items():
         print(f"  - {key}: {value}")
     
-    save_to_dataset(final_data, target_ip, label=label_value)
+    # Cas 1 : Mode Entraînement afin de remplir le csv pour le dataset (Label fourni))
+    if label_value is not None:
+        save_to_dataset(final_data, target_ip, label=label_value)
+        print(f"[+] Données sauvegardées avec label {label_value}")
+    
+    # Cas 2 : Mode Détection si il s'agit d'un honeypot ou pas (IA)
+    # else:
+    #     print("\n[*] Consultation de l'Intelligence Artificielle...")
+    #     pred, proba = predict_honeypot(final_data)
+        
+    #     if pred is not None:
+    #         confiance = proba[pred] * 100
+    #         print("\n" + "!"*40)
+    #         if pred == 1:
+    #             print(f"  ALERTE : HONEYPOT DÉTECTÉ ({confiance:.2f}%)")
+    #         else:
+    #             print(f"  VERDICT : SERVEUR RÉEL ({confiance:.2f}%)")
+    #         print("!"*40)
+    #     else:
+    #         print(f"[!] Erreur de prédiction : {proba}")
 
     return final_data
 
 def main():
-
     # On affiche le logo dès le début
     print(BANNER)
-    print("                --- Outil de Détection de Honeypots v1.0 ---\n")
 
     # Configuration du parseur d'arguments
     parser = argparse.ArgumentParser(
@@ -85,6 +129,11 @@ def main():
              "  my-target.com"
     )
 
+
+    # MODIFICATION : required=False pour permettre la prédiction IA
+    # parser.add_argument("-l", "--label", type=int, choices=[0, 1], required=False,
+    #                     help="Optionnel - 1: Honeypot, 0: Réel. Si omis : utilise l'IA.")
+
     parser.add_argument("-l", "--label", type = int, choices = [0,1], required = True,
                         help = "Label pour l'IA : 1 pour Honeypot, 0 pour Serveur Réel")
 
@@ -100,6 +149,9 @@ def main():
         print("[!] Aucune cible valide trouvée.")
         sys.exit(1)
 
+    # mode_label = f"Mode : {'Apprentissage ('+str(args.label)+')' if args.label is not None else 'Détection IA'}"
+    # print(f"[*] {mode_label}")
+
     print(f"[*] Mode : {'HONEYPOT (1)' if args.label == 1 else 'RÉEL (0)'}")
     print(f"[*] Nombre de cibles : {len(targets)}")
 
@@ -112,7 +164,7 @@ def main():
         except Exception as e:
             print(f"[!] Erreur lors du traitement de {ip} : {e}")
     
-    print(f"\n[+] Scan terminé. Les données sont dans data/honeypot_dataset.csv")
+    print(f"\n[+] Scan terminé.")
 
 if __name__ == "__main__":
     main()
