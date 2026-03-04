@@ -66,12 +66,24 @@ def main():
     print("                --- Outil de Détection de Honeypots v1.0 ---\n")
 
     # Configuration du parseur d'arguments
-    parser = argparse.ArgumentParser(description="Honeypops : Outil de détection de Honeypots")
+    parser = argparse.ArgumentParser(
+        description="Honeypops : Outil de détection de Honeypots",
+        formatter_class=argparse.RawTextHelpFormatter
+        )
     
     # Création d'un groupe mutuellement exclusif (soit l'un, soit l'autre)
     group = parser.add_mutually_exclusive_group(required=True)
-    group.add_argument("-t", "--target", help="IP de la cible unique")
-    group.add_argument("-f", "--file", help="Fichier .txt contenant une liste d'IPs")
+    group.add_argument("-t", "--target",
+                       help="IP de la cible unique"
+    )
+    group.add_argument(
+        "-f", "--file",
+        help="Fichier .txt contenant une liste d'IPs.\n"
+             "Format attendu :\n"
+             "  192.168.1.1\n"
+             "  8.8.8.8\n"
+             "  my-target.com"
+    )
 
     parser.add_argument("-l", "--label", type = int, choices = [0,1], required = True,
                         help = "Label pour l'IA : 1 pour Honeypot, 0 pour Serveur Réel")
