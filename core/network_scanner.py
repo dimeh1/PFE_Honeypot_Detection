@@ -9,7 +9,7 @@ import re
 # Désactivation des logs inutiles de Scapy
 logging.getLogger("scapy.runtime").setLevel(logging.ERROR)
 
-def get_network_fingerprint(target_ip, target_port=80):
+def get_network_fingerprint(target_ip, target_port=22):
     """
     Réalise le fingerprinting réseau sur une cible.
     Retourn un dictionnaire des caractéristiques extraites.
