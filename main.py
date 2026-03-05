@@ -73,7 +73,7 @@ def run_honeypops(target_ip, label_value):
         print("[+] Lancement de la Phase A (Fingerprinting)...")
         results_a = get_network_fingerprint(target_ip, target_port)
 
-        if not results_a or results_a.get("ttl") == 0:
+        if not results_a or results_a.get("window_size") == 0:
             print(f"[-] Port {target_port} FERMÉ ou FILTRÉ. On ignore ce port.")
             continue
             
