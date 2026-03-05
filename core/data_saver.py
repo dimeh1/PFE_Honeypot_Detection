@@ -16,6 +16,7 @@ def save_to_dataset(features, target_ip, label, filename = "data/honeypot_datase
         "jitter",
         "kernel_latency",
         "handshake_delay",
+        "app_processing_time",
         "latency_ratio",
         "banner_length",
         "has_keyword",
