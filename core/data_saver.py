@@ -1,7 +1,7 @@
 import csv
 import os
 
-def save_to_dataset(features, target_ip, label, filename = "data/honeypot_dataset.csv"):
+def save_to_dataset(features, target_ip, port, label, filename = "data/honeypot_dataset.csv"):
     """
     Sauvegarde des caractéristiques dans un CSV structuré pour l'entraînement de l'IA
     """
@@ -9,6 +9,8 @@ def save_to_dataset(features, target_ip, label, filename = "data/honeypot_datase
     # Définition des colonnes (features) pour l'IA
     fieldnames = [
         "ip",
+        "port",
+        "is_standard_port",
         "ttl",
         "window_size",
         "ip_id_behavior",
@@ -49,6 +51,8 @@ def save_to_dataset(features, target_ip, label, filename = "data/honeypot_datase
                     row["ip"] = target_ip
                 elif field == "label":
                     row["label"] = label
+                elif field == "port":
+                    row["port"] = port
                 else:
                     # On récupère la valeur, si elle n'existe pas on met 0
                     val = features.get(field, 0)

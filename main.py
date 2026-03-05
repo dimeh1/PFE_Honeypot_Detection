@@ -58,52 +58,65 @@ def predict_honeypot(features, model_path="train/honeypot_model.pkl"):
         return None, str(e)
     
 def run_honeypops(target_ip, label_value):
-    """Lance l'analyse complète sur une IP."""
-    print(f"\n" + "="*50)
+    """Lance l'analyse complète sur une IP et les ports 22 et 2222."""
+
+    ports_to_check = [22, 2222]
+
+    print(f"\n" + "="*60)
     print(f"[*] ANALYSE DE LA CIBLE : {target_ip}")
-    print("="*50)
+    print("="*60)
 
-    # ----- PHASE A -----
-    print("[+] Lancement de la Phase A (Fingerprinting)...")
-    results_a = get_network_fingerprint(target_ip)
-    
-    # ----- PHASE B -----
-    print("[+] Lancement de la Phase B (Temporelle)...")
-    results_b = get_temporal_features(target_ip)
+    for port in ports_to_check:
+        print(f"\n[?] Vérification du port {port}...")
 
-    # ----- PHASE SÉMANTIQUE + DÉVIATION -----
-    print("[+] Lancement de la Phase Sémantique et déviation...")
-    results_banner = get_enrichment_behavioral(target_ip, results_b["banner_raw"])
+        # ----- PHASE A -----
+        print("[+] Lancement de la Phase A (Fingerprinting)...")
+        results_a = get_network_fingerprint(target_ip)
 
-    # ----- SYNTHÈSE DES RÉSULTATS -----
-    print("\n[RÉSULTATS FINAUX]")
-    final_data = {**results_a, **results_b, **results_banner}
-    
-    for key, value in final_data.items():
-        print(f"  - {key}: {value}")
-    
-    # Cas 1 : Mode Entraînement afin de remplir le csv pour le dataset (Label fourni))
-    if label_value is not None:
-        save_to_dataset(final_data, target_ip, label=label_value)
-        print(f"[+] Données sauvegardées avec label {label_value}")
-    
-    # Cas 2 : Mode Détection si il s'agit d'un honeypot ou pas (IA)
-    # else:
-    #     print("\n[*] Consultation de l'Intelligence Artificielle...")
-    #     pred, proba = predict_honeypot(final_data)
-        
-    #     if pred is not None:
-    #         confiance = proba[pred] * 100
-    #         print("\n" + "!"*40)
-    #         if pred == 1:
-    #             print(f"  ALERTE : HONEYPOT DÉTECTÉ ({confiance:.2f}%)")
-    #         else:
-    #             print(f"  VERDICT : SERVEUR RÉEL ({confiance:.2f}%)")
-    #         print("!"*40)
-    #     else:
-    #         print(f"[!] Erreur de prédiction : {proba}")
+        if not results_a or results_a.get("ttl") == 0:
+            print(f"[-] Port {port} FERMÉ ou FILTRÉ. On ignore ce port.")
+            continue
+            
+        print(f"[+] Port {port} OUVERT. Analyse complète en cours...")
 
-    return final_data
+        # ----- PHASE B -----
+        print("[+] Lancement de la Phase B (Temporelle)...")
+        results_b = get_temporal_features(target_ip)
+
+        # ----- PHASE SÉMANTIQUE + DÉVIATION -----
+        print("[+] Lancement de la Phase Sémantique et déviation...")
+        results_banner = get_enrichment_behavioral(target_ip, results_b["banner_raw"])
+
+        # ----- SYNTHÈSE DES RÉSULTATS -----
+        print("\n[RÉSULTATS FINAUX]")
+        final_data = {**results_a, **results_b, **results_banner}
+
+        final_data['is_standard_port'] = 1 if port == 22 else 0
+
+        for key, value in final_data.items():
+            print(f"  - {key}: {value}")
+
+        # Cas 1 : Mode Entraînement afin de remplir le csv pour le dataset (Label fourni))
+        if label_value is not None:
+            save_to_dataset(final_data, target_ip, port,label=label_value)
+            print(f"[+] Données sauvegardées avec label {label_value}")
+
+        # Cas 2 : Mode Détection si il s'agit d'un honeypot ou pas (IA)
+        # else:
+        #     print("\n[*] Consultation de l'Intelligence Artificielle...")
+        #     pred, proba = predict_honeypot(final_data)
+
+        #     if pred is not None:
+        #         confiance = proba[pred] * 100
+        #         print("\n" + "!"*40)
+        #         if pred == 1:
+        #             print(f"  ALERTE : HONEYPOT DÉTECTÉ ({confiance:.2f}%)")
+        #         else:
+        #             print(f"  VERDICT : SERVEUR RÉEL ({confiance:.2f}%)")
+        #         print("!"*40)
+        #     else:
+        #         print(f"[!] Erreur de prédiction : {proba}")
+
 
 def main():
     # On affiche le logo dès le début
@@ -153,6 +166,7 @@ def main():
     # print(f"[*] {mode_label}")
 
     print(f"[*] Mode : {'HONEYPOT (1)' if args.label == 1 else 'RÉEL (0)'}")
+    print(f"[*] Analyse des ports : 22, 2222")
     print(f"[*] Nombre de cibles : {len(targets)}")
 
     # Lancement du scan

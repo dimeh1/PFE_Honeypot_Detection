@@ -9,7 +9,7 @@ import re
 # Désactivation des logs inutiles de Scapy
 logging.getLogger("scapy.runtime").setLevel(logging.ERROR)
 
-def get_network_fingerprint(target_ip, target_port=22):
+def get_network_fingerprint(target_ip, target_port):
     """
     Réalise le fingerprinting réseau sur une cible.
     Retourn un dictionnaire des caractéristiques extraites.
@@ -64,7 +64,7 @@ def get_network_fingerprint(target_ip, target_port=22):
     return features_A
 
 
-def get_temporal_features(target_ip, target_port=22, count=5):
+def get_temporal_features(target_ip, target_port, count=5):
     """
     Analyse Temporelle et Statistique.
     """
@@ -188,13 +188,14 @@ def get_temporal_features(target_ip, target_port=22, count=5):
     return features_B
 
 # Analyse sémantique & Déviation
-def get_enrichment_behavioral(target_ip, banner_raw, target_port=22):
+def get_enrichment_behavioral(target_ip, banner_raw, target_port):
     """
     Analyse du contenu de la bannière et teste la réation du protocole.
     """
 
     features = {
         "banner_length" : 0,
+        "is_standard_port": 1 if target_port == 22 else 0,
         "has_keyword" : 0,
         "ssh_version_major" : 0.0,
         "os_family_linux": 0,
