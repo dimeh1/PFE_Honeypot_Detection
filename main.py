@@ -66,22 +66,22 @@ def run_honeypops(target_ip, label_value):
     print(f"[*] ANALYSE DE LA CIBLE : {target_ip}")
     print("="*60)
 
-    for port in ports_to_check:
-        print(f"\n[?] Vérification du port {port}...")
+    for target_port in ports_to_check:
+        print(f"\n[?] Vérification du port {target_port}...")
 
         # ----- PHASE A -----
         print("[+] Lancement de la Phase A (Fingerprinting)...")
-        results_a = get_network_fingerprint(target_ip)
+        results_a = get_network_fingerprint(target_ip, target_port)
 
         if not results_a or results_a.get("ttl") == 0:
-            print(f"[-] Port {port} FERMÉ ou FILTRÉ. On ignore ce port.")
+            print(f"[-] Port {target_port} FERMÉ ou FILTRÉ. On ignore ce port.")
             continue
             
-        print(f"[+] Port {port} OUVERT. Analyse complète en cours...")
+        print(f"[+] Port {target_port} OUVERT. Analyse complète en cours...")
 
         # ----- PHASE B -----
         print("[+] Lancement de la Phase B (Temporelle)...")
-        results_b = get_temporal_features(target_ip)
+        results_b = get_temporal_features(target_ip, target_port)
 
         # ----- PHASE SÉMANTIQUE + DÉVIATION -----
         print("[+] Lancement de la Phase Sémantique et déviation...")
@@ -91,14 +91,14 @@ def run_honeypops(target_ip, label_value):
         print("\n[RÉSULTATS FINAUX]")
         final_data = {**results_a, **results_b, **results_banner}
 
-        final_data['is_standard_port'] = 1 if port == 22 else 0
+        final_data['is_standard_port'] = 1 if target_port == 22 else 0
 
         for key, value in final_data.items():
             print(f"  - {key}: {value}")
 
         # Cas 1 : Mode Entraînement afin de remplir le csv pour le dataset (Label fourni))
         if label_value is not None:
-            save_to_dataset(final_data, target_ip, port,label=label_value)
+            save_to_dataset(final_data, target_ip, target_port,label=label_value)
             print(f"[+] Données sauvegardées avec label {label_value}")
 
         # Cas 2 : Mode Détection si il s'agit d'un honeypot ou pas (IA)
