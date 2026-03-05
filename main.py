@@ -85,7 +85,7 @@ def run_honeypops(target_ip, label_value):
 
         # ----- PHASE SÉMANTIQUE + DÉVIATION -----
         print("[+] Lancement de la Phase Sémantique et déviation...")
-        results_banner = get_enrichment_behavioral(target_ip, results_b["banner_raw"])
+        results_banner = get_enrichment_behavioral(target_ip, results_b["banner_raw"], target_port)
 
         # ----- SYNTHÈSE DES RÉSULTATS -----
         print("\n[RÉSULTATS FINAUX]")
