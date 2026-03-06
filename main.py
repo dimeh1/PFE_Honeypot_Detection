@@ -74,7 +74,7 @@ def run_honeypops(target_ip, label_value):
         results_a = get_network_fingerprint(target_ip, target_port)
 
         if not results_a or results_a.get("window_size") == 0:
-            print(f"[-] Port {target_port} FERMÉ ou FILTRÉ. On ignore ce port.")
+            print(f"[-] Port {target_port} FERMÉ ou FILTRÉ.")
             continue
             
         print(f"[+] Port {target_port} OUVERT. Analyse complète en cours...")
@@ -82,6 +82,10 @@ def run_honeypops(target_ip, label_value):
         # ----- PHASE B -----
         print("[+] Lancement de la Phase B (Temporelle)...")
         results_b = get_temporal_features(target_ip, target_port)
+
+        if not results_b or results_b.get("handshake_delay") == 0.0:
+            print(f"[-] Impossible de calculé le Handshakle sur le Port {target_port}.")
+            continue
 
         # ----- PHASE SÉMANTIQUE + DÉVIATION -----
         print("[+] Lancement de la Phase Sémantique et déviation...")
