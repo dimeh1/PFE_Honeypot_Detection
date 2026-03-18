@@ -101,25 +101,25 @@ def run_honeypops(target_ip, label_value):
             print(f"  - {key}: {value}")
 
         # Cas 1 : Mode Entraînement afin de remplir le csv pour le dataset (Label fourni))
-        if label_value is not None:
-            save_to_dataset(final_data, target_ip, target_port,label=label_value)
-            print(f"[+] Données sauvegardées avec label {label_value}")
+        # if label_value is not None:
+        #     save_to_dataset(final_data, target_ip, target_port,label=label_value)
+        #     print(f"[+] Données sauvegardées avec label {label_value}")
 
         # Cas 2 : Mode Détection si il s'agit d'un honeypot ou pas (IA)
-        # else:
-        #     print("\n[*] Consultation de l'Intelligence Artificielle...")
-        #     pred, proba = predict_honeypot(final_data)
+        else:
+            print("\n[*] Consultation de l'Intelligence Artificielle...")
+            pred, proba = predict_honeypot(final_data)
 
-        #     if pred is not None:
-        #         confiance = proba[pred] * 100
-        #         print("\n" + "!"*40)
-        #         if pred == 1:
-        #             print(f"  ALERTE : HONEYPOT DÉTECTÉ ({confiance:.2f}%)")
-        #         else:
-        #             print(f"  VERDICT : SERVEUR RÉEL ({confiance:.2f}%)")
-        #         print("!"*40)
-        #     else:
-        #         print(f"[!] Erreur de prédiction : {proba}")
+            if pred is not None:
+                confiance = proba[pred] * 100
+                print("\n" + "!"*40)
+                if pred == 1:
+                    print(f"  ALERTE : HONEYPOT DÉTECTÉ ({confiance:.2f}%)")
+                else:
+                    print(f"  VERDICT : SERVEUR RÉEL ({confiance:.2f}%)")
+                print("!"*40)
+            else:
+                print(f"[!] Erreur de prédiction : {proba}")
 
 
 def main():
@@ -148,11 +148,11 @@ def main():
 
 
     # MODIFICATION : required=False pour permettre la prédiction IA
-    # parser.add_argument("-l", "--label", type=int, choices=[0, 1], required=False,
-    #                     help="Optionnel - 1: Honeypot, 0: Réel. Si omis : utilise l'IA.")
+    parser.add_argument("-l", "--label", type=int, choices=[0, 1], required=False,
+                        help="Optionnel - 1: Honeypot, 0: Réel. Si omis : utilise l'IA.")
 
-    parser.add_argument("-l", "--label", type = int, choices = [0,1], required = True,
-                        help = "Label pour l'IA : 1 pour Honeypot, 0 pour Serveur Réel")
+    # parser.add_argument("-l", "--label", type = int, choices = [0,1], required = True,
+    #                     help = "Label pour l'IA : 1 pour Honeypot, 0 pour Serveur Réel")
 
     args = parser.parse_args()
 
@@ -166,8 +166,8 @@ def main():
         print("[!] Aucune cible valide trouvée.")
         sys.exit(1)
 
-    # mode_label = f"Mode : {'Apprentissage ('+str(args.label)+')' if args.label is not None else 'Détection IA'}"
-    # print(f"[*] {mode_label}")
+    mode_label = f"Mode : {'Apprentissage ('+str(args.label)+')' if args.label is not None else 'Détection IA'}"
+    print(f"[*] {mode_label}")
 
     print(f"[*] Mode : {'HONEYPOT (1)' if args.label == 1 else 'RÉEL (0)'}")
     print(f"[*] Analyse des ports : 22, 2222")
