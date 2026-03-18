@@ -40,7 +40,7 @@ def predict_honeypot(features, model_path="train/honeypot_model.pkl"):
         
         # Liste des features EXACTEMENT dans le même ordre que le CSV d'entraînement
         feature_columns = [
-            "ttl", "window_size", "ip_id_behavior", "tcp_options_order", "jitter", 
+            "port", "is_standard_port", "ttl", "window_size", "ip_id_behavior", "tcp_options_order", "jitter", 
             "kernel_latency", "handshake_delay", "app_processing_time",
             "latency_ratio", "banner_length", "has_keyword", "ssh_version_major",
             "os_family_linux", "os_family_bsd", "os_family_windows",
