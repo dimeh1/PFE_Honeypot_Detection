@@ -1,6 +1,4 @@
-  ---
-
-  🍯 PFE_Honeypot_Detection (Honeypops)
+# 🍯 PFE_Honeypot_Detection (Honeypops)
 
 
   Honeypops est un moteur de détection hybride conçu pour identifier les systèmes leurres (Honeypots) en milieu hostile. Il combine l'analyse des couches basses du réseau (TCP Stack) avec des mesures temporelles de haute précision et un
