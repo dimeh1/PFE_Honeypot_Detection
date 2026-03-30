@@ -1,120 +1,109 @@
-🍯 Honeypops - Honeypot Detection Tool
+🍯 PFE_Honeypot_Detection (Honeypops)
 
 
-  ![Python Version (https://img.shields.io/badge/python-3.8+-blue.svg)](https://www.python.org/downloads/)
-  ![License: MIT (https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
-  ![PFE Project (https://img.shields.io/badge/Project-PFE-red.svg)](#)
-
-
-  Honeypops est un outil de cybersécurité avancé conçu pour identifier les Honeypots (pots de miel) en utilisant une approche multi-couches combinant l'analyse réseau, l'analyse temporelle et l'Intelligence Artificielle.
+Honeypops est un moteur de détection hybride conçu pour identifier les systèmes leurres (Honeypots) en milieu hostile. Il combine l'analyse des couches basses du réseau (TCP Stack) avec des mesures temporelles de haute précision et un moteur d'inférence basé sur l'Intelligence Artificielle.
 
   ---
 
-  🚀 Présentation du Projet
+  🔬 Architecture Technique & Fonctionnement
 
 
-  Dans le cadre d'un test d'intrusion ou d'une analyse réseau, identifier un Honeypot est crucial pour ne pas révéler sa présence à un système de détection d'intrusion (IDS). Honeypops automatise ce processus en analysant les subtiles
-  différences de comportement entre un système réel (Production) et un système leurre (Kippo, Cowrie, etc.).
-
-  🔍 Méthodologie de Détection (3 Phases)
+  L'outil repose sur un pipeline d'analyse en trois étapes clés pour extraire des caractéristiques discriminantes (features) :
 
 
-  L'outil opère en trois étapes distinctes pour collecter des caractéristiques ("features") uniques :
+  1. Fingerprinting de la Pile TCP (Phase A)
+  Analyse des réponses réseau pour identifier les anomalies de configuration propres aux environnements virtualisés ou émulés :
+   * TTL & Window Size : Analyse des valeurs par défaut pour deviner l'OS réel derrière le service.
+   * TCP Options Order : Identification de la signature de la pile réseau (souvent modifiée par les outils de tunneling).
 
 
-   1. Phase A : Fingerprinting Réseau
-       * Analyse des en-têtes TCP (TTL, Window Size, IP ID).
-       * Identification de l'ordre des options TCP.
-   2. Phase B : Analyse Temporelle
-       * Mesure précise du délai de "Handshake" TCP.
-       * Calcul de la latence de traitement applicatif.
-       * Détection du "jitter" (variation de latence) souvent présent dans les environnements virtualisés.
-   3. Phase C : Analyse Sémantique & Déviation
-       * Analyse des bannières de services (SSH, Telnet).
-       * Recherche de mots-clés spécifiques et d'incohérences de versions.
-
-  ---
-
-  🛠 Structure du Projet
+  2. Analyse Temporelle & Latence (Phase B)
+  Mesure des délais de réponse avec une précision à la microseconde :
+   * Handshake Delay : Temps entre le SYN/ACK et le ACK final.
+   * Application Latency : Temps de réponse du service (ex: SSH Banner).
+   * Jitter Analysis : Détection des variations de latence suspectes induites par la virtualisation du honeypot.
 
 
-    1 PFE_Honeypot_Detection/
-    2 ├── main.py                 # Point d'entrée principal (CLI)
-    3 ├── core/                   # Moteur d'analyse
-    4 │   ├── network_scanner.py  # Analyse réseau & fingerprinting
-    5 │   ├── shodan_scanner.py   # Enrichissement via API externe
-    6 │   └── data_saver.py       # Gestion de la base de données (CSV)
-    7 ├── train/                  # Intelligence Artificielle
-    8 │   ├── train_model.py      # Script d'entraînement du modèle
-    9 │   └── honeypot_model.pkl  # Modèle IA entraîné (Scikit-Learn)
-   10 ├── data/
-   11 │   └── honeypot_dataset.csv # Dataset de caractéristiques récoltées
-   12 └── requirements.txt        # Dépendances du projet
+  3. Analyse Sémantique & Incohérence (Phase C)
+  Examen des bannières applicatives pour détecter les chaînes de caractères signatures (ex: bannières par défaut de Kippo ou Cowrie) et les incohérences de versions.
 
   ---
 
-  ⚙ Installation
-
-   1. Cloner le dépôt :
+  📂 Organisation du Projet
 
 
-   1     git clone https://github.com/votre-compte/Honeypops.git
-   2     cd Honeypops
+     1 PFE_Honeypot_Detection/
+     2 ├── main.py                 # Point d'entrée principal (CLI)
+     3 ├── core/                   # Moteur d'analyse
+     4 │   ├── network_scanner.py  # Analyse réseau & fingerprinting
+     5 │   ├── shodan_scanner.py   # Enrichissement via API externe
+     6 │   └── data_saver.py       # Gestion de la base de données (CSV)
+     7 ├── train/                  # Intelligence Artificielle
+     8 │   ├── train_model.py      # Script d'entraînement du modèle
+     9 │   └── honeypot_model.pkl  # Modèle IA entraîné (Scikit-Learn)
+    10 ├── data/
+    11 │   └── honeypot_dataset.csv # Dataset de caractéristiques récoltées
+    12 └── requirements.txt        # Dépendances du projet
 
-   2. Créer un environnement virtuel :
-
-
-   1     python -m venv .venv
-   2     source .venv/bin/activate  # Sur Linux/macOS
-   3     # .venv\Scripts\activate   # Sur Windows
-
-   3. Installer les dépendances :
-   1     pip install -r requirements.txt
 
   ---
 
-  📖 Utilisation
+  🚀 Guide d'Utilisation
+
+  ⚙ Installation Rapide
 
 
-  Le script main.py propose deux modes d'utilisation :
+     1 # 1. Cloner le dépôt
+     2 git clone https://github.com/dimeh1/PFE_Honeypot_Detection.git
+     3 cd PFE_Honeypot_Detection
+     4
+     5 # 2. Créer l'environnement de travail
+     6 python -m venv .venv
+     7 source .venv/bin/activate  # Windows: .venv\Scripts\activate
+     8
+     9 # 3. Installer les dépendances critiques
+    10 pip install -r requirements.txt
 
-  1. Mode Détection (IA)
-  Scanne une cible et utilise le modèle entraîné pour rendre un verdict.
-   1 python main.py -t 192.168.1.50
-
-
-  2. Mode Apprentissage (Collecte de données)
-  Utilisé pour enrichir le dataset en indiquant manuellement si la cible est un honeypot (1) ou un serveur réel (0).
-
-
-   1 python main.py -t 192.168.1.50 -l 1
-
-
-  Options disponibles :
-   * -t, --target : IP de la cible unique.
-   * -f, --file : Fichier .txt contenant une liste d'IPs à scanner.
-   * -l, --label : (Optionnel) 1 pour Honeypot, 0 pour Réel (force le mode apprentissage).
-
-  ---
-
-  🧠 Intelligence Artificielle
+  🛠 Commandes CLI
+  L'outil s'adapte à vos besoins via des arguments spécifiques :
 
 
-  Le modèle de détection est basé sur l'algorithme Random Forest (ou autre, à préciser selon votre script train_model.py), entraîné sur plus de 18 caractéristiques réseau et comportementales. Le taux de précision actuel est d'environ
-  XX% (à remplir).
-
-  ---
-
-  ⚖ Clause de Non-Responsabilité
+  A. Mode Inférence (Détection par IA)
+  Utilisez ce mode pour analyser une cible inconnue. Le modèle donnera un pourcentage de certitude.
 
 
-  Cet outil est développé uniquement à des fins éducatives et de recherche dans le cadre d'un PFE. L'utilisation de cet outil sur des réseaux sans autorisation explicite est illégale. L'auteur n'est pas responsable des dommages causés
-  par une utilisation abusive.
+    1 # Scanner une IP cible unique
+    2 python main.py --target 192.168.1.100
+    3
+    4 # Scanner une liste d'IPs depuis un fichier texte
+    5 python main.py --file targets_list.txt
+
+
+  B. Mode Apprentissage (Collecte de Données)
+  Utilisez ce mode pour nourrir l'IA avec de nouveaux exemples. L'argument -l (label) est obligatoire ici.
+   * --label 1 : Indique que la cible est un Honeypot.
+   * --label 0 : Indique que la cible est un Serveur Réel.
+
+
+    1 # Ajouter un Honeypot connu au dataset
+    2 python main.py -t 172.16.0.45 -l 1
+    3
+    4 # Ajouter un serveur réel connu au dataset
+    5 python main.py -t 8.8.8.8 -l 0
 
   ---
 
 
-  👨💻 Auteur
-   * Votre Nom/Pseudo - Étudiant en Cybersécurité - Votre Profil GitHub (https://github.com/votre-compte)
+  📊 Performance de l'IA
+  Le modèle actuel utilise un algorithme Random Forest Classifier avec les métriques suivantes :
+   * Features analysées : 18 (TTL, Jitter, SSH Version, Latency Ratio, etc.)
+   * Précision : ~XX% (à compléter avec vos tests)
+   * Ports analysés : 22 (SSH standard) et 2222 (Port de redirection classique).
+
+  ---
+
+
+  ⚖ Clause de Non-Responsabilité & Licence
+  Ce projet a été réalisé par **dimeh1** dans un cadre académique. L'auteur n'assume aucune responsabilité quant à l'usage de cet outil sur des infrastructures sans autorisation préalable.
 
   ---
