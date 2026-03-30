@@ -7,7 +7,7 @@
 
   ---
 
-  🔬 Architecture Technique & Fonctionnement
+  ## 🔬 Architecture Technique & Fonctionnement
 
   L'outil repose sur un pipeline d'analyse en trois étapes clés pour extraire des caractéristiques discriminantes (features) :
 
@@ -30,7 +30,7 @@
 
   ---
 
-  📂 Organisation du Projet
+  ## 📂 Organisation du Projet
 
 
     PFE_Honeypot_Detection/
@@ -48,7 +48,7 @@
 
   ---
 
-  🚀 Guide d'Utilisation
+  ## 🚀 Guide d'Utilisation
 
   Installation Rapide
 
@@ -68,7 +68,7 @@
 
   ---
 
-  Commandes CLI
+  ## Commandes CLI
 
 
   L'outil s'adapte à vos besoins via des arguments spécifiques :
@@ -98,7 +98,7 @@
 
   ---
 
-  📊 Performance de l'IA
+  ## 📊 Performance de l'IA
 
 
   Le modèle actuel utilise un algorithme Random Forest Classifier avec les métriques suivantes :
@@ -108,7 +108,7 @@
 
   ---
 
-  ⚖ Clause de Non-Responsabilité & Licence
+  ## ⚖ Clause de Non-Responsabilité & Licence
 
 
   Ce projet a été réalisé par dimeh1 dans un cadre académique (PFE). L'auteur n'assume aucune responsabilité quant à l'usage de cet outil sur des infrastructures sans autorisation préalable.
