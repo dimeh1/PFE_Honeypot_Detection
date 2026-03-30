@@ -101,9 +101,9 @@ def run_honeypops(target_ip, label_value):
             print(f"  - {key}: {value}")
 
         # Cas 1 : Mode Entraînement afin de remplir le csv pour le dataset (Label fourni))
-        # if label_value is not None:
-        #     save_to_dataset(final_data, target_ip, target_port,label=label_value)
-        #     print(f"[+] Données sauvegardées avec label {label_value}")
+        #if label_value is not None:
+        #    save_to_dataset(final_data, target_ip, target_port,label=label_value)
+        #    print(f"[+] Données sauvegardées avec label {label_value}")
 
         # Cas 2 : Mode Détection si il s'agit d'un honeypot ou pas (IA)
         else:
